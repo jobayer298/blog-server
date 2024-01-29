@@ -21,6 +21,9 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const blogCollection = client.db("blogDB").collection("blogs");
+    const commentCollection = client.db("blogDB").collection("comments");
+
+    //blog api
     app.post("/allBlogs", async (req, res) => {
       try {
         const blogData = req.body;
@@ -30,7 +33,7 @@ async function run() {
       } catch (error) {
         res.status(500).send("Internal Server Error");
       }
-    }); 
+    });
     app.get("/allBlogs", async (req, res) => {
       try {
         const result = await blogCollection.find().toArray();
@@ -88,6 +91,50 @@ async function run() {
         );
         if (result.matchedCount === 0) {
           res.status(404).send("blog not found");
+          return;
+        }
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Internal Server Error");
+      }
+    });
+
+    //comment api
+    app.post("/comments", async (req, res) => {
+      try {
+        const commentData = req.body;
+        console.log(commentData);
+        const result = await commentCollection.insertOne(commentData);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Internal Server Error");
+      }
+    });
+    app.get("/comments", async (req, res) => {
+      try {
+        const result = await commentCollection.find({}).toArray();
+        console.log(result);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Internal Server Error");
+      }
+    });
+    app.get("/comments/:blogID", async (req, res) => {
+      try {
+        const blogID = req.params.blogID;
+        const result = await commentCollection.find({ blogID }).toArray();
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Internal Server Error");
+      }
+    });
+    app.delete("/comment/:commentID", async (req, res) => {
+      try {
+        const id = req.params.commentID;
+        const query = { commentID: Number(id) };
+        const result = await commentCollection.deleteOne(query);
+        if (result.deletedCount === 0) {
+          res.status(404).send("comment not found");
           return;
         }
         res.send(result);
